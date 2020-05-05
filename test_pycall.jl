@@ -1,0 +1,3 @@
+using PyCall
+math = pyimport("math")
+math.sin(math.pi / 4) # returns ? 1/?2 = 0.70710678...
