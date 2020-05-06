@@ -109,7 +109,11 @@ module cathode_post_process
         poro = 0.0
         total_particle_volume = 0.0
         opipeline = ovitoio.import_file("dump_final.cfg")
-        voro = ovitomod.VoronoiAnalysisModifier(generate_bonds=true, use_radii=true)
+        try
+            voro = ovitomod.VoronoiAnalysisModifier(generate_bonds=true, use_radii=true)
+        catch
+            error("could not compute graph")
+        end
         opipeline.modifiers.append(voro)
         opipeline.modifiers.append(
             ovitomod.ComputePropertyModifier(operate_on="bonds", output_property="Length", expressions=["BondLength"]))
@@ -226,6 +230,9 @@ module cathode_post_process
                           electrolyte_type::Array{Int64,1}=[1],
                           compute_paths::Bool=true,
                           assume_particle_type = false)
+        poro = 0.0
+        num_util = 0.0
+        wt_util = 0.0
         catfile = load_file("cathode.json")
         if !assume_particle_type
             electrode_type = Int64[]
@@ -240,7 +247,12 @@ module cathode_post_process
                 end
             end
         end
-        G, poro = create_graph(electrode_type, electrolyte_type)
+        try
+            G, poro = create_graph(electrode_type, electrolyte_type)
+        catch
+            println("No graph could be computed")
+            return poro, num_util, wt_util
+        end
         find_paths!(G)
         num_util, wt_util = find_utilization(G)
 
