@@ -28,26 +28,30 @@ module cathode_post_process
         return catfile
     end
 
-    # function find_astar_paths!(G::AbstractGraph)
-    #     dd = convert.(Float64,adjacency_matrix(G))
-    #     for e in edges(G)
-    #         s = LightGraphs.src(e)
-    #         d = LightGraphs.dst(e)
-    #         dd[s,d] = get_prop(G, e, :weight)
-    #     end
-    #     source = filter_vertices(G,:node_type, "source")
-    #     source1 = collect(source)
-    #     target = filter_vertices(G,:node_type, "target")
-    #     for s in source
-    #         for t in target
-    #             xx = a_star(G, s, t, dd,
-    #                 n->ifelse(get_prop(G,n,:ptype) in electrode_type, Inf, 0)
-    #             if length(xx) > 0
-    #                 set_prop!(G, s, :has_path, true)
-    #                 break
-    #         end
-    #     end
-    # end
+    function find_astar_paths!(G::AbstractGraph)
+        source = filter_vertices(G,:node_type, "source")
+        source1 = collect(source)
+        target = filter_vertices(G,:node_type, "target")
+
+        for s in vertices(G)
+            set_prop!(G, s, :has_path, false)
+        end
+
+        all_se = collect(filter_vertices(G, :ptype, 3))
+        for s in source
+            push!(all_se, s)
+            sg, vmap = induced_subgraph(G, all_se)
+            vmap2 = Dict(v=>i for (i,v) in enumerate(vmap))
+            for t in target
+                xx = a_star(sg, vmap2[s], vmap2[t])
+                if length(xx) > 1
+                    set_prop!(G, s, :has_path, true)
+                    break
+                end
+            end
+            pop!(all_se)
+        end
+    end
 
     function find_paths!(G::AbstractGraph)
         dd = convert.(Float64,adjacency_matrix(G))
@@ -109,11 +113,11 @@ module cathode_post_process
         poro = 0.0
         total_particle_volume = 0.0
         opipeline = ovitoio.import_file("dump_final.cfg")
-        try
+        # try
             voro = ovitomod.VoronoiAnalysisModifier(generate_bonds=true, use_radii=true)
-        catch
-            error("could not compute graph")
-        end
+        # catch
+            # error("could not compute graph")
+        # end
         opipeline.modifiers.append(voro)
         opipeline.modifiers.append(
             ovitomod.ComputePropertyModifier(operate_on="bonds", output_property="Length", expressions=["BondLength"]))
@@ -247,13 +251,14 @@ module cathode_post_process
                 end
             end
         end
+        G = nothing
         try
             G, poro = create_graph(electrode_type, electrolyte_type)
         catch
             println("No graph could be computed")
             return poro, num_util, wt_util
         end
-        find_paths!(G)
+        find_astar_paths!(G)
         num_util, wt_util = find_utilization(G)
 
         return poro, num_util, wt_util

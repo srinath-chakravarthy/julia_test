@@ -110,6 +110,7 @@ df_smooth= by(df_avg,[:wt_ratio,:bimodal_mix_ratio, :bimodal_radius_ratio],
            utlization = x.utilization,
            util2 = smooth_util(x.particle_size_ratio, x.utilization, true),
            pack2 = smooth_pack(x.particle_size_ratio, x.packing_density, true)))
+
 ##
 nmc_wt_ratio1 = collect(0.7:0.01:0.92)
 # lambda_min1 = [0.25,0.3,0.35,0.4,0.45, 0.5,0.55,0.6,
