@@ -37,7 +37,7 @@ module cathode_post_process
             set_prop!(G, s, :has_path, false)
         end
 
-        all_se = collect(filter_vertices(G, :ptype, 3))
+        all_se = collect(filter_vertices(G, :type,"electrolyte"))
         for s in source
             push!(all_se, s)
             sg, vmap = induced_subgraph(G, all_se)
@@ -67,7 +67,7 @@ module cathode_post_process
         for s in source
             set_prop!(G, s, :has_path, false)
         end
-        all_se = collect(filter_vertices(G,:ptype, 3))
+        all_se = collect(filter_vertices(G,:ptype, "electrolyte"))
         for s in source
             for t in target
                 fsource = filter(x->x!=s, source1)
@@ -112,7 +112,7 @@ module cathode_post_process
     function create_graph(electrode_type::Array{Int64}, electrolyte_type::Array{Int64},filename="dump_final.cfg")
         poro = 0.0
         total_particle_volume = 0.0
-        opipeline = ovitoio.import_file("dump_final.cfg")
+        opipeline = ovitoio.import_file(filename)
         # try
             voro = ovitomod.VoronoiAnalysisModifier(generate_bonds=true, use_radii=true)
         # catch
@@ -153,9 +153,11 @@ module cathode_post_process
             set_props!(G,pid,Dict(:id=>id[pid], :ptype=>ptype[pid],
                                   :node_type=>nothing, :has_path=>false,
                                   :volume=>radius[pid]^3, :active=>false,
-                                  :active_connected=>false))
+                                  :active_connected=>false,
+                                  :type => "electrolyte"))
             if ptype[pid] in electrode_type
                 set_prop!(G,pid, :active, true)
+                set_prop!(G,pid, :type, "electrode")
                 if pos[pid,3] - radius[pid] < 1e-3
                     set_prop!(G,pid, :active_connected, true)
                 end
@@ -231,7 +233,7 @@ module cathode_post_process
     function post_process(;directory::String="./",
                           filename::AbstractString="dump_final.cfg",
                           electrode_type::Array{Int64,1}=[1],
-                          electrolyte_type::Array{Int64,1}=[1],
+                          electrolyte_type::Array{Int64,1}=[2],
                           compute_paths::Bool=true,
                           assume_particle_type = false)
         poro = 0.0
