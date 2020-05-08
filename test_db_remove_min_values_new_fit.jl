@@ -70,6 +70,7 @@ function replacenan(x,y)
         x[i] = ifelse(isnan(x[i]), y[i], x[i])
     end
 end
+#
 
 function smooth(x,y)
     si = pyimport("scipy.interpolate")
