@@ -3,7 +3,7 @@ module cathode_post_process
     using JSON
     using PyCall, LaTeXStrings
     using LightGraphs, MetaGraphs, SimpleWeightedGraphs, SparseArrays
-    export post_process, load_file, find_paths!, find_utilization
+    export post_process, load_file, find_paths!, find_utilization, create_graph
 
     const cat = PyNULL()
     const ovitoio = PyNULL()
@@ -136,7 +136,9 @@ module cathode_post_process
         zmax = maximum(pos[:,3])
         izmax = argmax(pos[:,3])
         rzmax = radius[izmax]
-        set!(data.cell_, (2,2), zmax + rzmax)
+        @pywith data.cell_ begin
+            set!(data.cell_, (2,2), zmax + rzmax)
+        end
         opipeline.compute()
         cell = data.cell
         cell_volume = data.cell.volume
