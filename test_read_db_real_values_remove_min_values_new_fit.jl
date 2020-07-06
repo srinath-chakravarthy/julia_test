@@ -119,10 +119,10 @@ df_smooth= by(df_interp,[:wt_ratio,:bimodal_mix_ratio, :bimodal_radius_ratio],
            utlization = x.utilization,
            pack2 = smooth(x.particle_size_ratio, x.packing_density),
            util2 = smooth(x.particle_size_ratio, x.utilization)))
-df_smooth= by(df_interp,[:wt_ratio,:bimodal_mix_ratio, :bimodal_radius_ratio],
-   (:particle_size_ratio, :packing_density, :utilization)
-    => x->(util2 = smooth_util(x.particle_size_ratio, x.utilization),
-           pack2 = smooth_pack(x.particle_size_ratio, x.packing_density)))
+# df_smooth= by(df_interp,[:wt_ratio,:bimodal_mix_ratio, :bimodal_radius_ratio],
+#    (:particle_size_ratio, :packing_density, :utilization)
+#     => x->(util2 = smooth_util(x.particle_size_ratio, x.utilization),
+#            pack2 = smooth_pack(x.particle_size_ratio, x.packing_density)))
 # display(p)
 ###
 #Plotting
