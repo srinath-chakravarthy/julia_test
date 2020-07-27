@@ -28,7 +28,7 @@ module cathode_post_process
         return catfile
     end
 
-    function find_astar_paths!(G::AbstractGraph)
+    function find_astar_paths!(G::AbstractGraph, print_paths=false, io::IO=nothing)
         source = filter_vertices(G,:node_type, "source")
         source1 = collect(source)
         target = filter_vertices(G,:node_type, "target")
@@ -46,6 +46,22 @@ module cathode_post_process
                 xx = a_star(sg, vmap2[s], vmap2[t])
                 if length(xx) > 1
                     set_prop!(G, s, :has_path, true)
+                    if print_paths
+                        if (length(xx) > 10)
+                            for (i,e) in enumerate(xx)
+                                if (i == 1)
+                                    s = LightGrahs.src(e)
+                                    print(io, str(s),",")
+                                elseif (i == length(xx))
+                                    d = LightGrahs.src(e)
+                                    println(io, str(d))
+                                else
+                                    d = LightGrahs.src(e)
+                                    println(io, str(d), ",")
+                                end
+                            end
+                        end
+                    end
                     break
                 end
             end
@@ -237,7 +253,8 @@ module cathode_post_process
                           electrode_type::Array{Int64,1}=[1],
                           electrolyte_type::Array{Int64,1}=[2],
                           compute_paths::Bool=true,
-                          assume_particle_type = false)
+                          assume_particle_type = false,
+                          print_paths = false)
         poro = 0.0
         num_util = 0.0
         wt_util = 0.0
@@ -262,7 +279,14 @@ module cathode_post_process
             println("No graph could be computed")
             return poro, num_util, wt_util
         end
-        find_astar_paths!(G)
+        if (print_paths)
+            io = open("paths.txt","w+")
+            find_astar_paths!(G, print_paths, io)
+            close(io)
+        else
+            find_astar_paths!(G)
+        end
+
         num_util, wt_util = find_utilization(G)
 
         return poro, num_util, wt_util
