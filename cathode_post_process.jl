@@ -57,7 +57,7 @@ module cathode_post_process
                                     println(io, string(d))
                                 else
                                     d = LightGraphs.src(e)
-                                    println(io, string(d), ",")
+                                    print(io, string(d), ",")
                                 end
                             end
                         end
