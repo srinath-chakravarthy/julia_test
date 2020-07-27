@@ -50,13 +50,13 @@ module cathode_post_process
                         if (length(xx) > 10)
                             for (i,e) in enumerate(xx)
                                 if (i == 1)
-                                    s = LightGrahs.src(e)
+                                    s = LightGraphs.src(e)
                                     print(io, str(s),",")
                                 elseif (i == length(xx))
-                                    d = LightGrahs.src(e)
+                                    d = LightGraphs.src(e)
                                     println(io, str(d))
                                 else
-                                    d = LightGrahs.src(e)
+                                    d = LightGraphs.src(e)
                                     println(io, str(d), ",")
                                 end
                             end
