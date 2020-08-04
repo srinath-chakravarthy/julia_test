@@ -51,12 +51,12 @@ module cathode_post_process
                             for (i,e) in enumerate(xx)
                                 if (i == 1)
                                     s = LightGraphs.src(e)
-                                    print(io, string(s),",")
+                                    print(io, string(get_prop(G,s,:id)),",")
                                 elseif (i == length(xx))
-                                    d = LightGraphs.src(e)
+                                    d = LightGraphs.dst(e)
                                     println(io, string(d))
                                 else
-                                    d = LightGraphs.src(e)
+                                    d = LightGraphs.dst(e)
                                     print(io, string(d), ",")
                                 end
                             end
@@ -284,7 +284,8 @@ module cathode_post_process
             find_astar_paths!(G, print_paths, io)
             close(io)
         else
-            find_astar_paths!(G)
+            io = nothing
+            find_astar_paths!(G, print_paths, io)
         end
 
         num_util, wt_util = find_utilization(G)

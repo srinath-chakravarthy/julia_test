@@ -140,11 +140,11 @@ function smooth(x,y)
 end
 ## Get data
 work_dir = "/home/srinath/Projects/cathode_packing_data/bimodal2"
-plot_dir = "/home/srinath/Projects/cathode_packing_data/bimodal2/plots"
-bimodal_dir="/home/srinath/Projects/cathode_packing_data/bimodal2/bimodal_data/"
+plot_dir = "/home/srinath/Projects/cathode_packing_data/bimodal2/paper_plots/"
+bimodal_dir="/home/srinath/Projects/cathode_packing_data/bimodal2/new_data/"
 unimodal_dir= "/home/srinath/Projects/cathode_packing_data/bimodal2/unimodal_data/"
 cd(bimodal_dir)
-df_bimodal = DataFrame(CSV.File("all_data_smooth_interp.csv"))
+df_bimodal = DataFrame(CSV.File("all_data_interpolated_smoothed.csv"))
 cd(unimodal_dir)
 df_unimodal = DataFrame(CSV.File("all_data_smooth_interp.csv"))
 cd(work_dir)
@@ -186,7 +186,7 @@ plot!(x,y1, z1'*100.0, st=:contourf, seriescolor=cgrad(scheme.colors), levels=25
 plot!(x,y1, z1'*100.0, st=:contour, seriescolor=:black, levels=[95.0,98.0])
 cd(plot_dir)
 # plot!(x,y1, z1', st=:contourf, levels=256)
-png(p,"test_contour_unimodeal.png")
+png(p,"test_contour_unimodal.png")
 cd(work_dir)
 ##Plotting
 pyplot()
@@ -278,7 +278,7 @@ png(p, "compare_uni_bi_2.png")
 cd(work_dir)
 ## Contour Plots
 using Contour
-gr()
+pyplot()
 sf = pyimport("scipy.ndimage.filters")
 xlabel_real = L"$f_{CAM} (\mathrm{wt} \%)$"
 ylabel_real = L"$D_{SE} (\mu m)$"
@@ -309,17 +309,17 @@ p = plot(xlabel = xlabel,
 
 x = unique(df_unimodal[!,:particle_size_ratio])
 y = unique(df_unimodal[!,:wt_ratio])*100.0
-z = df_unimodal[!,:util2]*100.0
+z = df_unimodal[!,:pack2]*100.0
 z2 = reshape(z, length(x), length(y))
 zsmooth = sf.gaussian_filter(z2,sigma=4.0)
-contours_uni = contours(x,y,zsmooth,[90.0])
+contours_uni = contours(x,y,zsmooth,[80.0])
 cl = first(Contour.levels(contours_uni))
 line = first(Contour.lines(cl))
 
 xs, ys = Contour.coordinates(line)
-newys = smooth2(xs,ys/100.0, ret= true, ymax = 0.9) * 100.0
-# plot!(x,y, zsmooth', st=:contour, lt= :dash, seriescolor=:black, levels=[98.99,99.0], xlim = (3,10))
-# plot!(newys, Dcambig./xs, ls = :dash, label="Unimodal", color = :black)
+newys = smooth2(xs,ys/100.0, ret= true, ymax = 0.8) * 100.0
+# # plot!(x,y, zsmooth', st=:contour, lt= :dash, seriescolor=:black, levels=[98.99,99.0], xlim = (3,10))
+# # plot!(newys, Dcambig./xs, ls = :dash, label="Unimodal", color = :black)
 xs_save = xs
 ys_save = newys
 
@@ -332,27 +332,31 @@ df_bi = @where(df_bimodal, :bimodal_radius_ratio .== brr,
                 :bimodal_mix_ratio .== bmr)
 x = unique(df_bi[!,:particle_size_ratio])
 y = unique(df_bi[!,:wt_ratio])*100.0
-z = df_bi[!,:util2]*100.0
+z = df_bi[!,:pack2]*100.0
 z2 = reshape(z, length(x), length(y))
 zsmooth = sf.gaussian_filter(z2,sigma=1.0)
 zsmooth2 = flatten_new(zsmooth)
-contours_uni = contours(x,y,zsmooth,[90.0])
+contours_uni = contours(x,y,zsmooth,[80.0])
 cl = first(Contour.levels(contours_uni))
 line = first(Contour.lines(cl))
 
 xs, ys = Contour.coordinates(line)
-newys = smooth2(xs,ys/100.0, ret= true, ymax = 0.95) * 100.0
-
-plot!(x/brr,y, zsmooth', st=:contour, levels=[50.0, 75.0, 90.0, 95.0, 99.0], label="", seriescolor = :black, clabels=true, margin=10mm)
+newys = smooth2(xs,ys/100.0, ret= true, ymax = 0.8) * 100.0
+using Plots.PlotMeasures
+# plot!(x/brr,y, zsmooth', st=:contour, levels=[50.0, 75.0, 90.0, 95.0, 99.0], label="", seriescolor = :black, clabels=true, margin=10mm)
 # plot!(x/brr, y, zsmooth2, st=:wireframe, camera=(70,30), margin=10mm)
-# plot!(x/brr,y, zsmooth', st=:contour, seriescolor=cgrad(scheme.colors), levels=256)
-# plot!(x/brr,y, zsmooth', st=:contour, seriescolor=:black, levels=[98.99,99.0])
-# plot!(xs_save, ys_save, color = :black, ls=:dash, xlim=(2.5,8), ylim=(70,92), label="")
-# plot!(xs/brr, newys, ls = :solid, color = :black,xlim=(2.5,8), ylim=(70,92), label="")
+plot!(x/brr,y, zsmooth', st=:contourf, seriescolor=cgrad(scheme.colors), levels=5, margin = 5mm, colorbar=:right)
+plot!(x/brr,y, zsmooth', st=:contourf, seriescolor=cgrad(scheme.colors), levels=256, margin = 5mm)
+# plot!(x/brr,y, zsmooth', st=:contour, seriescolor=:black, levels=[95.0])
+plot!(xs_save, ys_save, color = :black, ls=:dash, ylim=(70,92), label="")
+plot!(xs/brr, newys, ls = :solid, color = :black,xlim=(2.5,8), ylim=(70,92), label="")
 
 cd(plot_dir)
-png(p, "compare_uni_bi_contour_90util.png")
+png(p, "compare_uni_bi_contour_90pack2.png")
+savefig(p, "compare_uni_bi_contour_90pack2.svg")
 cd(work_dir)
+## adsfasd
+
 p = plot(xlabel = ylabel_real,
         ylabel = xlabel_real,
         xmirror = false,
@@ -380,13 +384,14 @@ png(p, "compare_uni_bi_90_util.png")
 cd(work_dir)
 
 
-## Variation with bimodal radius ratio_
+## Variation with bimodal mix ratio_
 using Contour
 xlabel_real = L"$D_{CAM} (\mu m)$"
-ylabel_real = L"$\phi$"
-zlabel_real = L"$D_{SE} (\mu m)$"
-p = plot(xlabel = xlabel_real,
-        ylabel = ylabel_real,
+ylabel2 = L"$\phi = \frac{W_{CAM}^{SM}}{W_{CAM}}$"
+ylabel_real = L"$\psi = \frac{D_{CAM}^{SM}}{D_{CAM}^{BIG}}$"
+zlabel_real = L"$\lambda = \frac{D_{CAM}^{BIG}}{D_{SE}}$"
+p = plot(xlabel = zlabel_real,
+        ylabel = ylabel2,
         zlabel = zlabel_real,
         xmirror = false,
         framestyle = :box,
@@ -395,21 +400,21 @@ p = plot(xlabel = xlabel_real,
         legendtitlefontsize = 16,
         tickfontsize = 14,
         guidefontsize = 16,
-        legendtitle = "Distribution",
+        legendtitle = "",
         foreground_color_legend=nothing,
         background_color_legend=nothing,
-        title = title_real,
+        title = "",
         titlefontsize = 16,
         grid = false)
-df2 = @where(df_bimodal, :wt_ratio .== 0.925, :bimodal_mix_ratio .== 0.25, :bimodal_radius_ratio .> 0.24)
+df2 = @where(df_bimodal, :wt_ratio .== 0.9, :bimodal_radius_ratio .== 0.25)
 x = unique(df2[!,:particle_size_ratio])
-y = unique(df2[!,:bimodal_radius_ratio])
-z = df2[!,:util2]
+y = unique(df2[!,:bimodal_mix_ratio])
+z = df2[!,:util2]*100.0
 z2 = reshape(z, length(x), length(y))
-zsmooth = sf.gaussian_filter(z2,sigma=5.0)
-plot!(x/brr,y, zsmooth', st=:contourf, seriescolor=cgrad(scheme.colors))
+zsmooth = sf.gaussian_filter(z2,sigma=4.0)
+plot!(x/brr,y, zsmooth', st=:contourf, seriescolor=cgrad(scheme.colors), levels = [0, 10,20,30,40,50,60,70,80,90,100], clims = (0,100))
 plot!(x/brr,y, zsmooth', st=:contourf, seriescolor=cgrad(scheme.colors), levels=256)
-plot!(x/brr,y, zsmooth', st=:contour, seriescolor=:black, levels=[90.0,95.0])
+plot!(x/brr,y, zsmooth', st=:contour, seriescolor=:black, levels=[98.0])
 # contours_uni = Contour.contours(x,y,zsmooth,levels=10)
 # line = first(Contour.lines(cl))
 # cl = first(Contour.levels(contours_uni))
@@ -419,6 +424,47 @@ plot!(x/brr,y, zsmooth', st=:contour, seriescolor=:black, levels=[90.0,95.0])
 cd(plot_dir)
 png(p, "test.png")
 cd(work_dir)
+## Variation with bimodal mix ratio_
+using Contour
+xlabel_real = L"$D_{CAM} (\mu m)$"
+ylabel2 = L"$\phi = \frac{W_{CAM}^{SM}}{W_{CAM}}$"
+ylabel_real = L"$\psi = \frac{D_{CAM}^{SM}}{D_{CAM}^{BIG}}$"
+zlabel_real = L"$\lambda = \frac{D_{CAM}^{BIG}}{D_{SE}}$"
+p = plot(xlabel = zlabel_real,
+        ylabel = ylabel_real,
+        zlabel = zlabel_real,
+        xmirror = false,
+        framestyle = :box,
+        legend = :outertopright,
+        legendfontsize = 14,
+        legendtitlefontsize = 16,
+        tickfontsize = 14,
+        guidefontsize = 16,
+        legendtitle = "",
+        foreground_color_legend=nothing,
+        background_color_legend=nothing,
+        title = "",
+        titlefontsize = 16,
+        grid = false)
+df2 = @where(df_bimodal, :wt_ratio .== 0.9, :bimodal_mix_ratio .== 0.25, :bimodal_radius_ratio .> 0.24)
+x = unique(df2[!,:particle_size_ratio])
+y = unique(df2[!,:bimodal_radius_ratio])
+z = df2[!,:util2]*100.0
+z2 = reshape(z, length(x), length(y))
+zsmooth = sf.gaussian_filter(z2,sigma=4.0)
+plot!(x/brr,y, zsmooth', st=:contourf, seriescolor=cgrad(scheme.colors), levels = [0, 10,20,30,40,50,60,70,80,90,100], clims = (0,100))
+plot!(x/brr,y, zsmooth', st=:contourf, seriescolor=cgrad(scheme.colors), levels=256)
+plot!(x/brr,y, zsmooth', st=:contour, seriescolor=:black, levels=[98.0])
+# contours_uni = Contour.contours(x,y,zsmooth,levels=10)
+# line = first(Contour.lines(cl))
+# cl = first(Contour.levels(contours_uni))
+
+# xs, ys = Contour.coordinates(line)
+
+cd(plot_dir)
+png(p, "variation_with_brr.png")
+cd(work_dir)
+
 ## create db for fcam = 90% and lambda_critical = 99 bmr brr_dir, brr > 0.245 and brr <
 using Plots.PlotMeasures
 pyplot()
@@ -442,14 +488,30 @@ cdict4 = Dict(:red =>  ((0.0, 1.0, 1.0),
 
 scheme2 = make_colorscheme(cdict4)
 
-df2 = @where(df_bimodal, :wt_ratio .== 0.85,
-            :bimodal_radius_ratio .> 0.245, :bimodal_radius_ratio .<0.405,
-            :bimodal_mix_ratio .>0.195, :bimodal_mix_ratio .<0.505,
-            :particle_size_ratio .> 0.75)
-df_new = DataFrame([Float64, Float64, Float64, Float64, Float64],
-    [:bimodal_radius_ratio,:bimodal_mix_ratio, :lambda_crit, :dcamsmall, :dse])
-gd = groupby(df2, :bimodal_radius_ratio)
-Dcambig = 16.2
+cdict4_reverse = Dict(:red =>  ((0.0, 0.0, 0.0),
+                   (0.2, 0.3, 0.3),
+                   (0.4, 0.8, 0.8),
+                   (0.5, 1.0, 1.0),
+                   (0.9, 1.0, 1.0),
+                   (1.0, 1.0, 1.0)),
+
+         :green => ((0.0, 1.0, 1.0),
+                    (0.2, 1.0, 1.0),
+                    (0.3, 1.0, 1.0),
+                   (0.4, 0.9, 0.9),
+                   (0.5, 0.8, 0.8),
+                   (0.8, 0.0, 0.0),
+                   (1.0, 0.0, 0.0)),
+
+         :blue =>  ((0.0, 0.0, 0.0),
+                   (0.5, 0.0, 0.0),
+                   (0.6, 0.2, 0.2),
+                   (0.8, 0.9, 0.9),
+                   (1.0, 1.0, 1.0)))
+
+
+scheme_rev = make_colorscheme(cdict4_reverse)
+
 
 xlabel_real = L"$D_{CAM}^{SM} (\mu m)$"
 ylabel_real = L"$\phi$"
@@ -457,70 +519,96 @@ zlabel_real = L"$D_{SE} (\mu m)$"
 zlabel = L"$\lambda$"
 title = L"$f_{CAM} = 90 (\mathrm{wt} \%)$"
 xlabel = L"$\psi$"
-p = plot(xlabel = ylabel_real,
-        ylabel = xlabel,
-        zlabel = zlabel,
-        xmirror = false,
-        framestyle = :box,
-        legend = :outertopright,
-        legendfontsize = 14,
-        legendtitlefontsize = 16,
-        tickfontsize = 12,
-        guidefontsize = 16,
-        legendtitle = "Distribution",
-        foreground_color_legend=nothing,
-        background_color_legend=nothing,
-        title = title,
-        titlefontsize = 16,
-        grid = false)
 
-for (i,brr) in enumerate(keys(gd))
-    df_brr = gd[brr]
-    println(brr.bimodal_radius_ratio)
-    gd_bmr = groupby(df_brr,:bimodal_mix_ratio)
-    for (j, bmr) in enumerate(keys(gd_bmr))
-        df_bmr = gd_bmr[bmr]
-        xinter = smooth2(df_bmr[!,:particle_size_ratio], df_bmr[!,:util2], ret = false, ymax = 0.95)
-        # dfxx = @where(df, :y .> 0.98)
-        # xinter = 100.0
-        # if nrow(dfxx) > 0
-            # println(dfxx[1,:])
-            # xinter = dfxx[1,1]
-        # end
-        println(xinter)
-        # println(brr.bimodal_radius_ratio, bmr.bimodal_mix_ratio, xinter)
-        push!(df_new, [brr.bimodal_radius_ratio, bmr.bimodal_mix_ratio, xinter,
-            Dcambig*brr.bimodal_radius_ratio,
-            Dcambig*brr.bimodal_radius_ratio/xinter])
 
-        #
-        # plot!(df_bmr[!,:particle_size_ratio], newy)
+wrr = [0.75, 0.8, 0.85, 0.9]
+for wr in wrr
+    sf = pyimport("scipy.ndimage.filters")
+    p = plot(xlabel = ylabel_real,
+            ylabel = xlabel,
+            zlabel = zlabel,
+            xmirror = false,
+            framestyle = :box,
+            legend = :outertopright,
+            legendfontsize = 14,
+            legendtitlefontsize = 16,
+            tickfontsize = 12,
+            guidefontsize = 16,
+            legendtitle = "",
+            foreground_color_legend=nothing,
+            background_color_legend=nothing,
+            colorbar_title = L"$\lambda$",
+            grid = false)
+    filename = "3d_contour_non_dim_util" * string(wr)
+    df2 = @where(df_bimodal, :wt_ratio .== wr,
+                :bimodal_radius_ratio .>= 0.25, :bimodal_radius_ratio .<=0.4,
+                :bimodal_mix_ratio .>0.195, :bimodal_mix_ratio .<0.505,
+                :particle_size_ratio .> 0.75)
+    df_new = DataFrame([Float64, Float64, Float64, Float64, Float64, Float64],
+        [:bimodal_radius_ratio,:bimodal_mix_ratio, :lambda_crit, :dcamsmall, :dse, :lcrit_pack])
+    gd = groupby(df2, :bimodal_radius_ratio)
+    Dcambig = 16.2
+    for (i,brr) in enumerate(keys(gd))
+        df_brr = gd[brr]
+        println(brr.bimodal_radius_ratio)
+        gd_bmr = groupby(df_brr,:bimodal_mix_ratio)
+        for (j, bmr) in enumerate(keys(gd_bmr))
+            df_bmr = gd_bmr[bmr]
+            xinter = smooth2(df_bmr[!,:particle_size_ratio], df_bmr[!,:util2], ret = false, ymax = 0.98)
+            xinter_pack = smooth2(df_bmr[!,:particle_size_ratio], df_bmr[!,:pack2], ret = false, ymax = 0.8)
+            # dfxx = @where(df, :y .> 0.98)
+            # xinter = 100.0
+            # if nrow(dfxx) > 0
+                # println(dfxx[1,:])
+                # xinter = dfxx[1,1]
+            # end
+            println(bmr.bimodal_mix_ratio, xinter)
+            # println(brr.bimodal_radius_ratio, bmr.bimodal_mix_ratio, xinter)
+            push!(df_new, [brr.bimodal_radius_ratio, bmr.bimodal_mix_ratio, xinter,
+                Dcambig*brr.bimodal_radius_ratio,
+                Dcambig*brr.bimodal_radius_ratio/xinter, xinter_pack])
+
+            #
+            # plot!(df_bmr[!,:particle_size_ratio], newy)
+        end
     end
-end
-sort!(df_new)
+    sort!(df_new)
 
-df_new2 = by(df_new, [:bimodal_mix_ratio],
-            (:bimodal_radius_ratio, :lambda_crit, :dcamsmall, :dse)
-            => x->(bimodal_radius_ratio = x.bimodal_radius_ratio,
-                   lambda_crit = sf.gaussian_filter1d(x.lambda_crit, sigma = 1.0)./x.bimodal_radius_ratio,
-                   dcamsmall = x.dcamsmall,
-                   dse = sf.gaussian_filter1d(x.dse, sigma = 1.0)))
-sort!(df_new2)
-sf = pyimport("scipy.ndimage.filters")
-x = unique(df_new2[!,:bimodal_radius_ratio])
-y = unique(df_new2[!,:bimodal_mix_ratio])
-z = df_new2[!,:lambda_crit]
-z1 = reshape(z, length(x), length(y))
-zsmooth = sf.gaussian_filter(z1, sigma=4.0)
-df_new2[!,:l2] = flatten_new(zsmooth)
-# plot!(y,x, zsmooth, st=:contourf, seriescolor=cgrad(scheme.colors), levels=10)
-# plot!(y,x, zsmooth, st=:surface, levels=256, seriescolor=cgrad(scheme.colors), camera = (50,30), margin = 8mm)
-# plot!(x,y, zsmooth', st=:contour, seriescolor=:black, levels=[2.8,2.6])
-plot!(y,x, zsmooth, st=:wireframe, seriescolor = :black, camera = (10,30), margin = 8mm)
-cd(plot_dir)
-png(p,"3d_contour_non_dim_util_85.png")
-cd(work_dir)
-##
+    df_new2 = combine(df_new, :bimodal_mix_ratio => :bimodal_mix_ratio,
+                                :bimodal_radius_ratio => :bimodal_radius_raito,
+                                :lambda_crit,
+                                [:lambda_crit, :bimodal_radius_ratio] => (x,y)->sf.gaussian_filter1d(x,sigma=1.0)./y,
+                                :dcamsmall,
+                                :dse => x -> sf.gaussian_filter1d(x,sigma=1.0),
+                                :lcrit_pack,
+                                [:lcrit_pack, :bimodal_radius_ratio] => (x,y) -> sf.gaussian_filter1d(x, sigma=1.0)./y,
+                                [:lambda_crit, :lcrit_pack,  :bimodal_radius_ratio] => (x,y,z)->sf.gaussian_filter1d(max(x,y),sigma=1.0)./z)
+
+    # df_new2 = by(df_new, [:bimodal_mix_ratio],
+    #             (:bimodal_radius_ratio, :lambda_crit, :dcamsmall, :dse)
+    #             => x->(bimodal_radius_ratio = x.bimodal_radius_ratio,
+    #                    lambda_crit = sf.gaussian_filter1d(x.lambda_crit, sigma = 1.0)./x.bimodal_radius_ratio,
+    #                    dcamsmall = x.dcamsmall,
+    #                    dse = sf.gaussian_filter1d(x.dse, sigma = 1.0)))
+    rename!(df_new2, [:bimodal_mix_ratio, :bimodal_radius_ratio, :lambda, :lambda_crit, :dcamsmall, :dse,
+                     :lambda_pack, :lcrit_pack, :lcrit_pack_util])
+    sort!(df_new2)
+    sf = pyimport("scipy.ndimage.filters")
+    x = unique(df_new2[!,:bimodal_radius_ratio])
+    y = unique(df_new2[!,:bimodal_mix_ratio])
+    z = df_new2[!,:lcrit_pack_util]
+    z1 = reshape(z, length(x), length(y))
+    zsmooth = sf.gaussian_filter(z1, sigma=2.0)
+    df_new2[!,:l2] = flatten_new(zsmooth)
+    # plot!(y,x, zsmooth, st=:contourf, seriescolor=cgrad(scheme.colors), levels=10)
+    # plot!(y,x, zsmooth, st=:surface, levels=256, seriescolor=cgrad(scheme.colors), camera = (50,30), margin = 8mm)
+    # plot!(x,y, zsmooth', st=:contour, seriescolor=:black, levels=[2.8,2.6])
+    plot!(y,x, zsmooth, st=:contourf, seriescolor=cgrad(scheme_rev.colors), camera = (10,30), margin = 5mm)
+    cd(plot_dir)
+    png(p,filename)
+    cd(work_dir)
+end
+## daf
 xlabel_real = L"$f_{CAM} (\mathrm{wt} \%)$"
 ylabel_real = L"$\theta_{CAM} (\mathrm{wt} \%)$"
 zlabel_real = L"$D_{SE} (\mu m)$"

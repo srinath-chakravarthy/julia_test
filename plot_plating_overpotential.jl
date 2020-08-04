@@ -4,18 +4,20 @@ using Plots, Plots.PlotMeasures
 using PyCall, Conda, LaTeXStrings
 using LsqFit
 # workdir = "C:\\Users\\s1.chakravar\\Documents\\Projects\\Li_swelling_moose\\stripping2"
-workdir = "/home/srinath/repo/Projects/moose_tests/supercomp/stripping/new"
+workdir = "/home/srinath/Projects/moose_tests/supercomp_latest/stripping"
 datadir = workdir
 cd(datadir)
-dirs = ["0.2mA","0.4mA","0.8mA", "1.2mA"]
-labels = [0.2, 0.4, 0.8, 1.2]
+dirs = ["0.2mA","0.4mA","0.8mA"]
+currents = [0.2, 0.4, 0.8] # ma/cm^2
+Faraday = 96485.3329 # C/mol
+rho = 1e-5 # m^3/mol
 # dirs = ["0.4mA"]
 pyplot()
-p = plot(xlabel = "time (a.u)",
+p = plot(xlabel = L"        Plated Li $(\mu m)$",
         ylabel = L"$\frac{E_{WE}-E_0}{E_0}$",
         xmirror = false,
         framestyle = :box,
-        legend = :bottomright,
+        legend = :outerright,
         legendfontsize = 14,
         legendtitlefontsize = 16,
         tickfontsize = 14,
@@ -27,48 +29,53 @@ p = plot(xlabel = "time (a.u)",
         titlefontsize = 16,
         grid = false,
         right_margin = 20mm,
-        xlim = (0,500), ylim = (0,5))
+        ylim = (0,5))
 
 for (i,d) in enumerate(dirs)
     cd(d)
-    # if ( i == 1)
-    #     cd("redo")
-    # end
+    if ( i == 1)
+        cd("redo")
+    end
     filename = "Rct_low_" * d * "_csv.csv"
     println(filename)
     df = DataFrame(CSV.File(filename))
     # if (i == 1)
-    df11 = @where(df, :time .== 70.0)
+    df11 = @where(df, :time .== 90.0)
+
     # else
     #     df11 = @where(df, :time .== 150.025)
     # end
-    E0 = df11[1,:over_potential]
-    df2 = @where(df,:time .> 70)
+    # E0 = df11[1,:over_potential]
+    df2 = @where(df,:time .> 90)
+    E0 = df2[1,:over_potential]
     cd("../")
-    # if (i == 1)
-    #     cd("../")
-    # end
-    labstr = string(labels[i])
-    y = (df2[!,:over_potential] .- E0) ./ E0
-    t = df2[!,:time]
-    println(t, y)
-    # println(E0)
     if (i == 1)
-        plot!(t ,y, label=labstr, ls=:dash)
-    elseif ( i == 2)
-        plot!(t,y, label=labstr, ls=:dash)
-    elseif (i == 3)
-        plot!(t,y, label=labstr, ls=:dash)
-    else
-        plot!(t,y, label=labstr, ls=:dash)
+        cd("../")
     end
-    if ( i == 3)
+    labstr = string(currents[i])
+    y = (df2[!,:over_potential] .- E0) ./ E0 * 5
+    t = df2[!,:time]
+    plated_Li = t * 10.0 * 10.0 * currents[i]/ Faraday * rho * 1e6 # um
+    # println(t, y)
+    println(E0)
+    plot!(t ,y, label=labstr, ls=:dash)
+    # if (i == 1)
+    #     plot!(t ,y, label=labstr, ls=:dash)
+    # elseif ( i == 2)
+    #     plot!(plated_Li,y, label=labstr, ls=:dash)
+    # elseif (i == 3)
+    #     plot!(plated_Li,y, label=labstr, ls=:dash)
+    # else
+    #     plot!(plated_Li,y, label=labstr, ls=:dash)
+    # end
+    if ( i == 1)
         plot!(twinx(), t, -df2[!,:ext_pressure]*1e6,
                 color=:black, guidefontsize=16, tickfontsize = 14,
-                label="", ylabel=L"$\sigma (MPa)$", xlim = (0,500), ylim = (0.5, 3.2))
+                label="", ylabel=L"$\sigma (MPa)$", ylim = (0.0, 3.2))
     end
+    # println(last(df2,10))
 end
 # annotate!()
 # p.o[:legend](bbox_to_anchor = (1.05,1), loc=2, borderaxespad = 1.0)
 cd(workdir)
-png(p,"test_over_potential.png")
+# png(p,"test_over_potential.png")

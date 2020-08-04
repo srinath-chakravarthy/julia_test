@@ -35,15 +35,15 @@ function run_post(filename)
             wt = a["Output_porosity"]
             wt1 = a["Particle_fraction"]
             wt2 = a["Active_weight_fraction"]
-            if isfile("cathode.json")
-                data2 = JSON.parsefile("cathode.json"; dicttype=Dict, inttype=Int64, use_mmap=true)
-                if haskey(data2, "Results")
-                    for b in data2["Results"]
-                        wt2_py = parse(Float64,b["Active_Weight_fraction"])
-                    end
-                end
-            end
-            return wt, wt1, wt2, wt2_py
+            # if isfile("cathode.json")
+            #     data2 = JSON.parsefile("cathode.json"; dicttype=Dict, inttype=Int64, use_mmap=true)
+            #     if haskey(data2, "Results")
+            #         for b in data2["Results"]
+            #             wt2_py = parse(Float64,b["Active_Weight_fraction"])
+            #         end
+            #     end
+            # end
+            return wt, wt1, wt2
         end
     catch
         error("File Not found")
@@ -140,13 +140,13 @@ function smooth(x,y)
 end
 ## Get data
 work_dir = "/home/srinath/Projects/cathode_packing_data/bimodal2"
-plot_dir = "/home/srinath/Projects/cathode_packing_data/bimodal2/patent_plots/"
-bimodal_dir="/home/srinath/Projects/cathode_packing_data/bimodal2/bimodal_data/"
+plot_dir = "/home/srinath/Projects/cathode_packing_data/bimodal2/paper_plots/"
+bimodal_dir="/home/srinath/Projects/cathode_packing_data/bimodal2/new_data/"
 cd(bimodal_dir)
-df_bimodal = DataFrame(CSV.File("all_data_smooth_interp.csv"))
+df_bimodal = DataFrame(CSV.File("all_data_interpolated_smoothed.csv"))
 cd(work_dir)
 
-##Plotting
+## Plotting
 pyplot()
 
 cdict3 = Dict(:red =>  ((0.0, 1.0, 1.0),
@@ -190,9 +190,28 @@ cdict4 = Dict(:red =>  ((0.0, 1.0, 1.0),
                    (0.5, 0.0, 0.0),
                    (1.0, 0.0, 0.0)))
 
-scheme2 = make_colorscheme(cdict4)
+cdict4_reverse = Dict(:red =>  ((0.0, 0.0, 0.0),
+                   (0.2, 0.0, 0.0),
+                   (0.4, 0.6, 0.6),
+                   (0.5, 0.0, 0.0),
+                   (0.9, 0.9, 0.9),
+                   (1.0, 1.0, 1.0)),
 
-df2 = @where(df_bimodal, :wt_ratio .== 0.8,
+         :green => ((0.0, 1.0, 1.0),
+                   (0.4, 0.5, 0.5),
+                   (0.95, 0.0, 0.0),
+                   (1.0, 0.0, 0.0)),
+
+         :blue =>  ((0.0, 1.0, 1.0),
+                   (0.5, 0.0, 0.0),
+                   (0.6, 1.0, 1.0),
+                   (0.8, 1.0, 1.0),
+                   (1.0, 1.0, 1.0)))
+
+scheme2 = make_colorscheme(cdict4)
+scheme_rev = make_colorschem(cdict4_rev)
+
+df2 = @where(df_bimodal, :wt_ratio .== 0.85,
             :bimodal_radius_ratio .> 0.245, :bimodal_radius_ratio .<0.405,
             :bimodal_mix_ratio .>0.195, :bimodal_mix_ratio .<0.505,
             :particle_size_ratio .> 0.75)

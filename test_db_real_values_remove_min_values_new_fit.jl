@@ -5,6 +5,31 @@ using Plots
 using PyCall, Conda, LaTeXStrings
 using LsqFit
 import GR.meshgrid
+# function run_post(filename)
+#     try
+#         println(pwd())
+#         data = JSON.parsefile(filename; dicttype=Dict, inttype=Int64, use_mmap=true)
+#         if !haskey(data, "Results")
+#             error("Results file not found")
+#         else
+#             wt = 0.0
+#             wt1 = 0.0
+#             wt2 = 0.0
+#             a = data["Results"]
+#             # for b in a
+#                 wt = parse(Float64, a["Output_porosity"])
+#                 wt1 = parse(Float64,a["Particle_fraction"])
+#                 wt2 = parse(Float64,a["Active_Weight_fraction"])
+#             # end
+#             println(wt1)
+#             return wt, wt1, wt2
+#         end
+#     catch
+#         error("File Not found")
+#     end
+#
+# end
+
 function run_post(filename)
     try
         # println(pwd())
@@ -15,12 +40,19 @@ function run_post(filename)
             wt = 0.0
             wt1 = 0.0
             wt2 = 0.0
+            wt2_py = 0.0
             a = data["Results"]
-            for b in a
-                wt = parse(Float64, b["Output_porosity"])
-                wt1 = parse(Float64,b["Particle_fraction"])
-                wt2 = parse(Float64,b["Active_Weight_fraction"])
-            end
+            wt = a["Output_porosity"]
+            wt1 = a["Particle_fraction"]
+            wt2 = a["Active_weight_fraction"]
+            # if isfile("cathode.json")
+            #     data2 = JSON.parsefile("cathode.json"; dicttype=Dict, inttype=Int64, use_mmap=true)
+            #     if haskey(data2, "Results")
+            #         for b in data2["Results"]
+            #             wt2_py = parse(Float64,b["Active_Weight_fraction"])
+            #         end
+            #     end
+            # end
             return wt, wt1, wt2
         end
     catch
@@ -28,6 +60,7 @@ function run_post(filename)
     end
 
 end
+
 
 function replacenan(x,y)
     if length(x) != length(y)
@@ -39,7 +72,7 @@ function replacenan(x,y)
 end
 
 
-function smooth_util(x,y)
+function smooth_util(x,y, ret::Bool=false)
     @. model(x,p) = 1.0/(1.0 + exp(-p[1]*(x-p[2])))
     p0 = [1.0, 0.25]
     fit = curve_fit(model, x, y, p0)
@@ -50,15 +83,23 @@ function smooth_util(x,y)
     if coef(fit)[1] > 0.0
         xinter = intersect_y(ymax, coef(fit))
     end
-    return Dict("fit"=>fit, "model"=>model, "x"=>collect(0.25:0.05:3.0), "inter"=>xinter)
+    if !ret
+        return Dict("fit"=>fit, "model"=>model, "x"=>collect(0.25:0.05:3.0), "inter"=>xinter)
+    else
+        return newyy
+    end
 end
 
-function smooth_pack(x,y)
+function smooth_pack(x,y, ret::Bool=false)
     @. model(x,p) = 0.86/(1.0 + exp(-p[1]*(x-p[2])))
     p0 = [1.0, 0.25]
     fit = curve_fit(model, x, y, p0)
     newyy = model(x, coef(fit))
-    return Dict("fit"=>fit, "model"=>model, "x"=>collect(0.25:0.05:3.0))
+    if !ret
+        return Dict("fit"=>fit, "model"=>model, "x"=>collect(0.25:0.05:3.0))
+    else
+        return newyy
+    end
 end
 
 
@@ -89,10 +130,12 @@ function smooth(x,y)
     return z
 end
 ## Get data
-work_dir="/home/srinath/Projects/cathode_packing_data/bimodal_distribution_database"
+work_dir="/home/srinath/Projects/cathode_packing_data/bimodal2"
+data_dir="/home/srinath/Projects/cathode_packing_data/bimodal2/new_data/"
 cd(work_dir)
 nstat = collect(1:5)
 nmc_wt_ratio = collect(0.7:0.05:0.92)
+nmc_wt_ratio = vcat(nmc_wt_ratio, 0.925)
 # nmc_wt_ratio = [0.85, 0.9]
 lambda_min = [0.25, 0.5, 0.75, 1.0, 1.1, 1.2, 1.25, 1.4, 1.5, 1.6666667, 1.8, 1.9, 2.0, 2.5,3.0]
 bimodal_radius_ratio = [0.2, 0.25, 0.275, 0.285, 0.3, 0.4, 0.5]
@@ -144,8 +187,9 @@ for w in nmc_wt_ratio
                     wt = 0.0
                     wt1 = 0.0
                     wt2 = 0.0
+                    # println(pwd())
                     try
-                        wt,wt1, wt2 = run_post("cathode.json")
+                        wt,wt1, wt2 = run_post("results.json")
                     catch
                         cd("../")
                         continue
@@ -183,13 +227,14 @@ for w in nmc_wt_ratio
     end
     cd("../") #wt_ratio_dir
 end
-##
+## Interpolate
 nmc_wt_ratio1 = collect(0.7:0.01:0.92)
+nmc_wt_ratio1 = vcat(nmc_wt_ratio1, 0.925)
 # lambda_min1 = [0.25,0.3,0.35,0.4,0.45, 0.5,0.55,0.6,
 #     0.65,0.75,0.8,0.9, 1.0, 1.1, 1.2, 1.25,
 #     1.4, 1.5, 1.6666667, 1.8, 1.9, 2.0, 2.5,3.0]
 lambda_min1 = collect(0.25:0.025:3.0)
-bimodal_radius_ratio2 = collect(0.2:0.005:0.4)
+bimodal_radius_ratio2 = collect(0.2:0.005:0.5)
 # bimodal_radius_ratio3 = collect(0.30:0.01:0.5)
 # bimodal_radius_ratio1 = hcat(bimodal_radius_ratio2,bimodal_radius_ratio3)
 bimodal_mix_ratio1 = bimodal_radius_ratio2
@@ -223,19 +268,30 @@ int_pack = si.griddata(points, pack, int_points, method="linear")
 replacenan(int_pack, int_packnear)
 df_interp[!,:utilization] = int_util
 df_interp[!,:packing_density] = int_pack
-df_smooth= by(df_interp,[:wt_ratio,:bimodal_mix_ratio, :bimodal_radius_ratio],
-    (:particle_size_ratio, :packing_density, :utilization)
-    => x->(particle_size_ratio = x.particle_size_ratio,
-           packing_density = x.packing_density,
-           utlization = x.utilization,
-           pack2 = smooth(x.particle_size_ratio, x.packing_density),
-           util2 = smooth(x.particle_size_ratio, x.utilization)))
-df_smooth= by(df_interp,[:wt_ratio,:bimodal_mix_ratio, :bimodal_radius_ratio],
-   (:particle_size_ratio, :packing_density, :utilization)
-    => x->(util2 = smooth_util(x.particle_size_ratio, x.utilization),
-           pack2 = smooth_pack(x.particle_size_ratio, x.packing_density)))
+## Smooth
+cd(data_dir)
+CSV.write("all_data_interpolated.csv", df_interp)
+gdf = groupby(df_interp, [:wt_ratio,:bimodal_mix_ratio, :bimodal_radius_ratio])
+df_smooth = combine(gdf, :wt_ratio, :bimodal_mix_ratio, :bimodal_radius_ratio,
+            :particle_size_ratio, :utilization, :packing_density,
+             [:particle_size_ratio, :utilization] => (x,y)->smooth_util(x,y, true),
+             [:particle_size_ratio, :packing_density] => (x,y)->smooth_pack(x,y, true))
+CSV.write("all_data_interpolated_smoothed.csv", df_smooth)
+cd(work_dir)
+## as
+# df_smooth= by(df_interp,[:wt_ratio,:bimodal_mix_ratio, :bimodal_radius_ratio],
+#     (:particle_size_ratio, :packing_density, :utilization)
+#     => x->(particle_size_ratio = x.particle_size_ratio,
+#            packing_density = x.packing_density,
+#            utlization = x.utilization,
+#            pack2 = smooth(x.particle_size_ratio, x.packing_density),
+#            util2 = smooth(x.particle_size_ratio, x.utilization)))
+# df_smooth= by(df_interp,[:wt_ratio,:bimodal_mix_ratio, :bimodal_radius_ratio],
+#    (:particle_size_ratio, :packing_density, :utilization)
+#     => x->(util2 = smooth_util(x.particle_size_ratio, x.utilization),
+#            pack2 = smooth_pack(x.particle_size_ratio, x.packing_density)))
 # display(p)
-###
+## adsfasd
 #Plotting
 pyplot()
 Dcambig = 14.0
