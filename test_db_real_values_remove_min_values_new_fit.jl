@@ -388,7 +388,6 @@ q_bmr = [0.2, 0.5]
 marker = [:solid, :dash, :dot]
 colors = [:red, :green, :blue]
 
-
 for (i,bmr) in enumerate(q_bmr)
     df_new = DataFrame([Float64],[:wt_ratio])
     for w in y
